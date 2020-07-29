@@ -1,7 +1,5 @@
 #+TITLE: The Little Elixir and OTP Guidebook
 
-* Introduction
-
-* A whirlwind tour
-
-* Processes 101
+- Introduction
+- A whirlwind tour
+- Processes 101

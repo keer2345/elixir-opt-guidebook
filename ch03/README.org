@@ -2,7 +2,7 @@
 * Actor concurrency model
 * Building a weather application
 
-- [[https://hex.pm/][Hex]] The package manager for the Erlang ecosystem.
+- [[https://hex.pm/][Hex]] :: The package manager for the Erlang ecosystem.
 - [[https://hexdocs.pm/][hexdocs]] Hexdocs is a place for hex packages to host their documentation.
 
 Creating a new project:
