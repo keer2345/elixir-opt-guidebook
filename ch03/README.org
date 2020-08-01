@@ -94,3 +94,57 @@ iex(3)> Metex.Worker.temperature_of "Snag, Yukon, Canada"
 iex(4)> Metex.Worker.temperature_of "Omicron Persei 8"
 "Omicron Persei 8 not found"
 #+END_SRC
+
+
+* Creating processes for concurrency
+
+Let's imagine you have a list of cities for which you want to get temperatures:
+#+BEGIN_SRC elixir
+iex(2)> cities = ["Singapore", "Monaco", "Vatican City", "Hong Kong", "Macau"]
+["Singapore", "Monaco", "Vatican City", "Hong Kong", "Macau"]
+iex(3)> cities |> Enum.map(fn city -> Metex.Worker.temperature_of(city) end)
+["Singapore: 27.7°C", "Monaco: 23.2°C", "Vatican City: 24.5°C",
+ "Hong Kong: 29.5°C", "Macau: 29.4°C"]
+#+END_SRC
+
+#+BEGIN_SRC elixir
+  def loop do
+    receive do
+      {sender_pid, location} ->
+        send(sender_pid, {:ok, temperature_of(location)})
+
+      _ ->
+        IO.puts("don't know how to process this message")
+    end
+
+    loop
+  end
+#+END_SRC
+
+#+BEGIN_SRC elixir
+iex> r(Metex.Worker)
+iex> pid = spawn(Metex.Worker, :loop, [])
+#PID<0.227.0>
+#+END_SRC
+
+** Receiving messages
+
+** Sending messages
+#+BEGIN_SRC elixir
+iex> send(pid, {self, "Singapore"})
+iex> flush
+{:ok, "Singapore: 29.0°C"}
+:ok
+#+END_SRC
+#+BEGIN_SRC elixir
+iex> cities = ["Singapore", "Monaco", "Vatican City", "Hong Kong", "Macau"]
+iex> cities |> Enum.each(fn city ->
+       pid = spawn(Metex.Worker, :loop, []) send(pid, {self, city})
+     end)
+iex> flush
+{:ok, "Hong Kong: 17.8°C"} {:ok, "Singapore: 27.5°C"} {:ok, "Macau: 18.6°C"}
+{:ok, "Monaco: 6.7°C"}
+{:ok, "Vatican City: 11.8°C"} :ok
+#+END_SRC
+
+* Collecting and manipulating results with another actor
