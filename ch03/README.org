@@ -148,3 +148,57 @@ iex> flush
 #+END_SRC
 
 * Collecting and manipulating results with another actor
+Let's set up the actor first. Create a file called =lib/coordinator.ex=:
+
+#+BEGIN_SRC elixir
+defmodule Metex.Coordinator do
+  def loop(results \\ [], results_expected) do
+    receive do
+      {:ok, result} ->
+        new_results = [result | results]
+
+        if results_expected == Enum.count(new_results) do
+          send(self(), :exit)
+        end
+
+        loop(new_results, results_expected)
+
+      :exit ->
+        IO.puts(results |> Enum.sort() |> Enum.join(", "))
+
+      _ ->
+        loop(results, results_expected)
+    end
+  end
+end
+
+#+END_SRC
+
+Let's seee how you can use the coordinator together with the workers, and enter the code in =lib/metex.ex=:
+
+#+BEGIN_SRC elixir
+defmodule Metex do
+  def hello do
+    :world
+  end
+
+  def temperatures_of(cities) do
+    coordinator_pid = spawn(Metex.Coordinator, :loop, [[], Enum.count(cities)])
+
+    cities
+    |> Enum.each(fn city ->
+      worker_pid = spawn(Metex.Worker, :loop, [])
+      send(worker_pid, {coordinator_pid, city})
+    end)
+  end
+end
+#+END_SRC
+#+BEGIN_SRC elixir
+iex> cities = ["Singapore", "Monaco", "Vatican City", "Hong Kong", "Macau"]
+
+iex> Metex.temperatures_of(cities)
+:ok
+Hong Kong: 17.8°C, Macau: 18.4°C, Monaco: 8.8°C, Singapore: 28.6°C, Vatican City: 8.5°C
+#+END_SRC
+
+** {:ok, result} -- the happy path message
